@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.0.0](https://github.com/codekie/openapi-examples-validator/compare/v6.0.3...v7.0.0) (2026-03-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* Minimum NodeJS version 20+
+
+### Features
+
+* add ARM-architecture support for Docker image ([#200](https://github.com/codekie/openapi-examples-validator/issues/200)) ([548e5d3](https://github.com/codekie/openapi-examples-validator/commit/548e5d389174e22bf8d0bf17eb4bdc54afea7f54))
+
+
+### Bug Fixes
+
+* upgrade dependencies ([#203](https://github.com/codekie/openapi-examples-validator/issues/203)) ([f765eab](https://github.com/codekie/openapi-examples-validator/commit/f765eabbed693d782fb973a35254a8a55f0d8759)), closes [#201](https://github.com/codekie/openapi-examples-validator/issues/201)
+
 ### [6.0.3](https://github.com/codekie/openapi-examples-validator/compare/v6.0.2...v6.0.3) (2025-04-21)
 
 
