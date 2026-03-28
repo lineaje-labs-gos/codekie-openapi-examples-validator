@@ -14,7 +14,7 @@ function _writeDockerfile() {
 
 function _createDockerfile() {
     return `
-FROM node:18.16.0-alpine3.17
+FROM node:20.20-alpine3.23
 
 RUN npm install -g openapi-examples-validator@${ VERSION }
 
