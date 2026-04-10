@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [7.1.0](https://github.com/codekie/openapi-examples-validator/compare/v7.0.0...v7.1.0) (2026-04-10)
+
+
+### Features
+
+* make type definitions available to TypeScript consumers ([#204](https://github.com/codekie/openapi-examples-validator/issues/204)) ([545b45a](https://github.com/codekie/openapi-examples-validator/commit/545b45a140ab4f536351f32b927e0bbb4ff77cc5))
+
+
+### Bug Fixes
+
+* update dependencies ([#206](https://github.com/codekie/openapi-examples-validator/issues/206)) ([4f295a0](https://github.com/codekie/openapi-examples-validator/commit/4f295a01e575dc064c645e65faae5acc549e50bc))
+* use Node 20 in Docker image ([1bdcfb4](https://github.com/codekie/openapi-examples-validator/commit/1bdcfb4471e2e7caf2b470f200884f3f2c31c5eb))
+
 ## [7.0.0](https://github.com/codekie/openapi-examples-validator/compare/v6.0.3...v7.0.0) (2026-03-28)
 
 
