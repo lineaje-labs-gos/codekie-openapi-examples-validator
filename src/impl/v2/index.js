@@ -33,7 +33,7 @@ function getJsonPathsToExamples() { return [PATH__EXAMPLES]; }
  * The pointer of the schema is derived from the pointer to the example and doesn't necessarily mean
  * that the schema actually exists.
  * @param {Array.<String>}  pathsExamples   Paths to the examples
- * @returns {Object.<String, String>} Map with schema-pointers as key and example-pointers as value
+ * @returns {Record<String, Set<String>>} Map with schema-pointers as key and example-pointers as value
  * @private
  */
 function buildValidationMap(pathsExamples) {
@@ -42,15 +42,16 @@ function buildValidationMap(pathsExamples) {
         validationMap[pathSchema] = (validationMap[pathSchema] || new Set())
             .add(pathExample);
         return validationMap;
-    }, {});
+    }, /** @type {Record<String, Set<String>>} */ ({}));
 }
 
 /**
  * Pre-processes the OpenAPI-spec, for further use.
  * The passed spec won't be modified. If a modification happens, a modified copy will be returned.
  * @param {Object}  openapiSpec                     The OpenAPI-spec as JSON-schema
- * @param {boolean} [noAdditionalProperties=false]  Don't allow properties that are not defined in the schema
- * @param {boolean} [allPropertiesRequired=false]   Make all properties required
+ * @param {Object}  [options]
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not defined in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
  * @return {Object} The prepared OpenAPI-spec
  */
 function prepare(openapiSpec, { noAdditionalProperties, allPropertiesRequired } = {}) {

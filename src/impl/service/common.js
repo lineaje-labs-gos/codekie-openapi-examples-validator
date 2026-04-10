@@ -33,8 +33,8 @@ module.exports = {
 /**
  * Apply the input rule to all models of type object in the input openApiSpec
  * @param {Object}                 openApiSpec           The to-be-modified schema
- * @param {Array.<String>}         [examplePaths]        The paths to the examples, which's content must not be modified
- * @param {JsonPathMatchCallbackBuilder}  [matchCallbackBuilder]  Function to build a callback
+ * @param {Array.<String>}         examplePaths          The paths to the examples, which's content must not be modified
+ * @param {JsonPathMatchCallbackBuilder}  matchCallbackBuilder    Function to build a callback
  *                                                                that will be called on each match
  */
 function applyCallbackToAllObjectModels(openApiSpec, examplePaths, matchCallbackBuilder) {
@@ -58,10 +58,32 @@ function applyCallbackToAllObjectModels(openApiSpec, examplePaths, matchCallback
 }
 
 /**
+ * @overload
  * Find matching elements in JSON.
  * @param {Object}                  json                JSON to be searched
  * @param {String}                  path                JSON-path to search
- * @param {String}                  [resultType="path"] Result-type of the query
+ * @param {"path"}                  [resultType="path"] Result-type of the query
+ * @param {JsonPathMatchCallback}   [callback]          Function to be called on a match
+ * @returns {Array<string>} Result of the query, depending on the `resultType`
+ * @private
+ */
+
+/**
+ * @overload
+ * Find matching elements in JSON.
+ * @param {Object}                  json                JSON to be searched
+ * @param {String}                  path                JSON-path to search
+ * @param {"value"}                 resultType          Result-type of the query
+ * @param {JsonPathMatchCallback}   [callback]          Function to be called on a match
+ * @returns {any} Result of the query, depending on the `resultType`
+ * @private
+ */
+
+/**
+ * Find matching elements in JSON.
+ * @param {Object}                  json                JSON to be searched
+ * @param {String}                  path                JSON-path to search
+ * @param {"path" | "value"}        [resultType="path"] Result-type of the query
  * @param {JsonPathMatchCallback}   [callback]          Function to be called on a match
  * @returns {any} Result of the query, depending on the `resultType`
  * @private
@@ -95,6 +117,10 @@ function _excludeExamples(openApiSpec, paths, examplePaths) {
         });
 }
 
+/**
+ * @param {string} path
+ * @returns {boolean | undefined}
+ */
 function _isPropertiesDefinition(path) {
     // Path has to end with `properties`
     if (!path.match(/\['properties']$/)) { return; }
@@ -103,6 +129,10 @@ function _isPropertiesDefinition(path) {
     return !consecutiveMatch || consecutiveMatch.length % 2 !== 0;
 }
 
+/**
+ * @param {any} entity
+ * @returns {boolean}
+ */
 function _isObjectDefinition(entity) {
     return entity && (entity.type === 'object' || entity.properties);
 }

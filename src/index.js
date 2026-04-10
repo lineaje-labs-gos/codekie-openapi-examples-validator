@@ -2,6 +2,10 @@
  * Entry-point for the validator-API
  */
 
+/** @import Ajv from 'ajv-draft-04' */
+/** @import { CustomError } from './application-error' */
+/** @import { Implementation } from './impl' */
+
 const
     merge = require('lodash.merge'),
     flatten = require('lodash.flatten'),
@@ -35,8 +39,8 @@ const SYM__INTERNAL = Symbol('internal'),
  * ErrorJsonPathNotFound
  * @typedef {{
  *      cause: {
- *          [params]: {
- *              [path]: string
+ *          params?: {
+ *              path?: string
  *          }
  *      }
  * }} ErrorJsonPathNotFound
@@ -52,12 +56,11 @@ const ErrorJsonPathNotFound = createError(ErrorType.jsonPathNotFound);
 
 // PUBLIC API
 
-module.exports = {
-    'default': validateExamples,
-    validateFile,
-    validateExample,
-    validateExamplesByMap
-};
+exports.default = validateExamples;
+exports.validateExamples = validateExamples;
+exports.validateFile = validateFile;
+exports.validateExample = validateExample;
+exports.validateExamplesByMap = validateExamplesByMap;
 
 // IMPLEMENTATION DETAILS
 
@@ -66,10 +69,13 @@ module.exports = {
 /**
  * ValidationStatistics
  * @typedef {{
+ *      [SYM__INTERNAL]: {
+ *          [PROP__SCHEMAS_WITH_EXAMPLES]: Set<Object>
+ *      },
  *      schemasWithExamples: number,
  *      examplesTotal: number,
  *      examplesWithoutSchema: number,
- *      [matchingFilePathsMapping]: number
+ *      matchingFilePathsMapping?: number
  * }} ValidationStatistics
  */
 
@@ -93,13 +99,14 @@ module.exports = {
 /**
  * Validates OpenAPI-spec with embedded examples.
  * @param {Object}  openapiSpec OpenAPI-spec
- * @param {boolean} [noAdditionalProperties=false]  Don't allow properties that are not defined in the schema
- * @param {boolean} [allPropertiesRequired=false]   Make all properties required
- * @param {Array.<string>} [ignoreFormats]          List of datatype formats that shall be ignored (to prevent
+ * @param {Object} [options]
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not defined in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
+ * @param {Array.<string>} [options.ignoreFormats]  List of datatype formats that shall be ignored (to prevent
  *                                                  "unsupported format" errors). If an Array with only one string is
  *                                                  provided where the formats are separated with `\n`, the entries
  *                                                  will be expanded to a new array containing all entries.
- * @returns {ValidationResponse}
+ * @returns {Promise<ValidationResponse>}
  */
 async function validateExamples(openapiSpec, { noAdditionalProperties, ignoreFormats, allPropertiesRequired } = {}) {
     const impl = Determiner.getImplementation(openapiSpec);
@@ -108,20 +115,21 @@ async function validateExamples(openapiSpec, { noAdditionalProperties, ignoreFor
     let pathsExamples = impl.getJsonPathsToExamples()
         .reduce((res, pathToExamples) => {
             return res.concat(_pathToPointer(pathToExamples, openapiSpec));
-        }, []);
+        }, /** @type {Array<string>} */ ([]));
     return _validateExamplesPaths({ impl }, pathsExamples, openapiSpec, { ignoreFormats });
 }
 
 /**
  * Validates OpenAPI-spec with embedded examples.
  * @param {string}  filePath                        File-path to the OpenAPI-spec
- * @param {boolean} [noAdditionalProperties=false]  Don't allow properties that are not defined in the schema
- * @param {boolean} [allPropertiesRequired=false]   Make all properties required
- * @param {Array.<string>} [ignoreFormats]          List of datatype formats that shall be ignored (to prevent
+ * @param {Object}  [options]
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not defined in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
+ * @param {Array.<string>} [options.ignoreFormats]  List of datatype formats that shall be ignored (to prevent
  *                                                  "unsupported format" errors). If an Array with only one string is
  *                                                  provided where the formats are separated with `\n`, the entries
  *                                                  will be expanded to a new array containing all entries.
- * @returns {ValidationResponse}
+ * @returns {Promise<ValidationResponse>}
  */
 async function validateFile(filePath, { noAdditionalProperties, ignoreFormats, allPropertiesRequired } = {}) {
     let openapiSpec = null;
@@ -139,15 +147,17 @@ async function validateFile(filePath, { noAdditionalProperties, ignoreFormats, a
  * @param {string}  globMapExternalExamples     File-path (globs are supported) to the mapping-file containing JSON-
  *                                              paths to schemas as key and a single file-path or Array of file-paths
  *                                              to external examples
- * @param {boolean} [cwdToMappingFile=false]    Change working directory for resolving the example-paths (relative to
+ * @param {Object}  [options]
+ * @param {boolean} [options.cwdToMappingFile=false]
+ *                                              Change working directory for resolving the example-paths (relative to
  *                                              the mapping-file)
- * @param {boolean} [noAdditionalProperties=false] Don't allow properties that are not defined in the schema
- * @param {boolean} [allPropertiesRequired=false]  Make all properties required
- * @param {Array.<string>} [ignoreFormats]      List of datatype formats that shall be ignored (to prevent
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not defined in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
+ * @param {Array.<string>} [options.ignoreFormats] List of datatype formats that shall be ignored (to prevent
  *                                              "unsupported format" errors). If an Array with only one string is
  *                                              provided where the formats are separated with `\n`, the entries
  *                                              will be expanded to a new array containing all entries.
- * @returns {ValidationResponse}
+ * @returns {Promise<ValidationResponse>}
  */
 async function validateExamplesByMap(filePathSchema, globMapExternalExamples,
     { cwdToMappingFile, noAdditionalProperties, ignoreFormats, allPropertiesRequired } = {}
@@ -200,7 +210,7 @@ async function validateExamplesByMap(filePathSchema, globMapExternalExamples,
                 return response;
             }
             return _mergeValidationResponses(res, response);
-        }, null),
+        }, /** @type {ValidationResponse | null} */ (null)),
         { statistics: { matchingFilePathsMapping } }
     );
 }
@@ -210,13 +220,14 @@ async function validateExamplesByMap(filePathSchema, globMapExternalExamples,
  * @param {String}  filePathSchema                  File-path to the OpenAPI-spec
  * @param {String}  pathSchema                      JSON-path to the schema
  * @param {String}  filePathExample                 File-path to the external example-file
- * @param {boolean} [noAdditionalProperties=false]  Don't allow properties that are not described in the schema
- * @param {boolean} [allPropertiesRequired=false]   Make all properties required
- * @param {Array.<string>} [ignoreFormats]          List of datatype formats that shall be ignored (to prevent
+ * @param {Object}  [options]
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not described in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
+ * @param {Array.<string>} [options.ignoreFormats]  List of datatype formats that shall be ignored (to prevent
  *                                                  "unsupported format" errors). If an Array with only one string is
  *                                                  provided where the formats are separated with `\n`, the entries
  *                                                  will be expanded to a new array containing all entries.
- * @returns {ValidationResponse}
+ * @returns {Promise<ValidationResponse>}
  */
 async function validateExample(filePathSchema, pathSchema, filePathExample, {
     noAdditionalProperties,
@@ -251,7 +262,7 @@ async function validateExample(filePathSchema, pathSchema, filePathExample, {
 /**
  * Parses the OpenAPI-spec (supports JSON and YAML)
  * @param {String}  filePath    File-path to the OpenAPI-spec
- * @returns {object}    Parsed OpenAPI-spec
+ * @returns {Promise<object>}   Parsed OpenAPI-spec
  * @private
  */
 async function _parseSpec(filePath) {
@@ -305,10 +316,11 @@ function _validate(validationHandler) {
  *                                                                  key and a single file-path or Array of file-paths
  *                                                                  to external examples
  * @param {ValidationStatistics}    statistics                      Validation-statistics
- * @param {boolean}                 [cwdToMappingFile=false]        Change working directory for resolving the example-
+ * @param {Object}                  options
+ * @param {boolean}                 [options.cwdToMappingFile=false] Change working directory for resolving the example-
  *                                                                  paths (relative to the mapping-file)
- * @param {string}                  [dirPathMapExternalExamples]    The directory-path of the mapping-file
- * @param {Array.<string>} [ignoreFormats]          List of datatype formats that shall be ignored (to prevent
+ * @param {string}                  [options.dirPathMapExternalExamples] The directory-path of the mapping-file
+ * @param {Array.<string>} [options.ignoreFormats]  List of datatype formats that shall be ignored (to prevent
  *                                                  "unsupported format" errors). If an Array with only one string is
  *                                                  provided where the formats are separated with `\n`, the entries
  *                                                  will be expanded to a new array containing all entries.
@@ -412,7 +424,7 @@ function _pathToPointer(path, openapiSpec) {
 }
 /**
  * Extract JSON-pointer(s) for specific path from a OpenAPI-spec
- * @param {String}  path  JSON-path in the OpenAPI-Spec
+ * @param {String}  pathSchema  JSON-path in the OpenAPI-Spec
  * @param {Object}  openapiSpec         OpenAPI-spec
  * @returns {String} JSON-pointer to schema or throws error
  * @private
@@ -434,10 +446,12 @@ function _getSchmaPointer(pathSchema, openapiSpec) {
 
 /**
  * Validates examples at the given paths in the OpenAPI-spec.
- * @param {Object}          impl            Spec-dependant validator
+ * @param {Object}          impl
+ * @param {Implementation}  impl.impl       Spec-dependant validator
  * @param {Array.<String>}  pathsExamples   JSON-paths to examples
  * @param {Object}          openapiSpec     OpenAPI-spec
- * @param {Array.<string>} [ignoreFormats]  List of datatype formats that shall be ignored (to prevent
+ * @param {Object}          options
+ * @param {Array.<string>} [options.ignoreFormats] List of datatype formats that shall be ignored (to prevent
  *                                          "unsupported format" errors). If an Array with only one string is
  *                                          provided where the formats are separated with `\n`, the entries
  *                                          will be expanded to a new array containing all entries.
@@ -445,13 +459,14 @@ function _getSchmaPointer(pathSchema, openapiSpec) {
  * @private
  */
 function _validateExamplesPaths({ impl }, pathsExamples, openapiSpec, { ignoreFormats }) {
-    const statistics = _initStatistics(),
-        validationResult = {
-            valid: true,
-            statistics,
-            errors: []
-        },
-        createValidator = _initValidatorFactory(openapiSpec, { ignoreFormats });
+    const statistics = _initStatistics();
+    /** @type {ValidationResponse} */
+    const validationResult = {
+        valid: true,
+        statistics,
+        errors: []
+    };
+    const createValidator = _initValidatorFactory(openapiSpec, { ignoreFormats });
     let validationMap;
     try {
         // Create mapping between JSON-schemas and examples
@@ -479,12 +494,14 @@ function _validateExamplesPaths({ impl }, pathsExamples, openapiSpec, { ignoreFo
 
 /**
  * Validates a single schema.
- * @param {Object}                  openapiSpec         OpenAPI-spec
- * @param {ajv}                     createValidator     Factory, to create JSON-schema validator
- * @param {string}                  schemaPointer          JSON-pointer to schema (for request- or response-property)
- * @param {Object.<String, String>} validationMap Map with schema-pointers as key and example-pointers as value
- * @param {Object}                  statistics          Object to contain statistics metrics
- * @param {Object}                  validationResult    Container, for the validation-results
+ * @param {Object}                  options
+ * @param {Object}                  options.openapiSpec       OpenAPI-spec
+ * @param {function(): Ajv}         options.createValidator   Factory, to create JSON-schema validator
+ * @param {string}                  options.schemaPointer     JSON-pointer to schema (for request- or response-property)
+ * @param {Record<String, Set<String>>} options.validationMap Map with schema-pointers as key and example-pointers as
+ *                                                            value
+ * @param {ValidationStatistics}    options.statistics        Object to contain statistics metrics
+ * @param {ValidationResponse}      options.validationResult  Container, for the validation-results
  * @private
  */
 function _validateSchema({
@@ -524,12 +541,11 @@ function _initStatistics() {
             [PROP__SCHEMAS_WITH_EXAMPLES]: new Set()
         },
         examplesTotal: 0,
-        examplesWithoutSchema: 0
+        examplesWithoutSchema: 0,
+        get [PROP__SCHEMAS_WITH_EXAMPLES]() {
+            return statistics[SYM__INTERNAL][PROP__SCHEMAS_WITH_EXAMPLES].size;
+        }
     };
-    Object.defineProperty(statistics, PROP__SCHEMAS_WITH_EXAMPLES, {
-        enumerable: true,
-        get: () => statistics[SYM__INTERNAL][PROP__SCHEMAS_WITH_EXAMPLES].size
-    });
     return statistics;
 }
 
@@ -537,7 +553,7 @@ function _initStatistics() {
  * Extract object by the given JSON-pointer
  * @param {String}      pointer JSON-pointer
  * @param {Object}      json JSON to extract the object(s) from
- * @returns {Object}    Extracted object
+ * @returns {Object | undefined} Extracted object
  */
 function _getByPointer(pointer, json) {
     try {
@@ -552,17 +568,18 @@ function _getByPointer(pointer, json) {
  * given path.
  * `pathExample` and `filePathExample` are exclusively mandatory.
  * itself
- * @param {Function}    createValidator     Factory, to create JSON-schema validator
- * @param {Object}      schema              JSON-schema
- * @param {Object}      example             Example to validate
- * @param {Object}      statistics          Object to contain statistics metrics
- * @param {String}      [filePathExample]   File-path to the example file
+ * @param {Object}      options
+ * @param {Function}    options.createValidator     Factory, to create JSON-schema validator
+ * @param {Object | Object[] | null | undefined} options.schema JSON-schema
+ * @param {Object | undefined} options.example      Example to validate
+ * @param {ValidationStatistics} options.statistics Object to contain statistics metrics
+ * @param {String}      [options.filePathExample]   File-path to the example file
  * @returns {Array.<Object>} Array with errors. Empty array, if examples are valid
  * @private
  */
 function _validateExample({ createValidator, schema, example, statistics, filePathExample }) {
-    const
-        errors = [];
+    /** @type {Array<Object>} */
+    const errors = [];
     statistics.examplesTotal++;
     // No schema, no validation (Examples without schema are considered valid)
     if (!schema) {
@@ -586,7 +603,10 @@ function _validateExample({ createValidator, schema, example, statistics, filePa
 
 /**
  * Create a new instance of a JSON schema validator
- * @returns {ajv}
+ * @param {Object} specSchema
+ * @param {Object} options
+ * @param {Array<string>} [options.ignoreFormats]
+ * @returns {function(): Ajv}
  * @private
  */
 function _initValidatorFactory(specSchema, { ignoreFormats }) {
@@ -598,7 +618,7 @@ function _initValidatorFactory(specSchema, { ignoreFormats }) {
         formats: ignoreFormats && ignoreFormats.reduce((result, entry) => {
             result[entry] = () => true;
             return result;
-        }, {})
+        }, /** @type {Record<string, () => boolean>} */ ({}))
     });
 }
 
@@ -621,6 +641,9 @@ function _extractSchema(schemaPointer, openapiSpec, suppressErrorIfNotFound = fa
     return schema;
 }
 
+/**
+ * @param {string} schemaPointer
+ */
 function _pathToSchemaNotFoundError(schemaPointer) {
     throw new ErrorJsonPathNotFound(`Path to schema can't be found: '${schemaPointer}'`, {
         params: {

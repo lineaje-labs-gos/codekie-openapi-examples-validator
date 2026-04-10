@@ -25,10 +25,10 @@ const PATH__EXAMPLE = `${RESPONSES}${SINGLE_EXAMPLE}`,
     PROP__EXAMPLE = 'example',
     PROP__EXAMPLES = 'examples';
 
-const ExampleType = {
+const ExampleType = /** @type {const} */ ({
     single: 'single',
     multi: 'multi'
-};
+});
 
 // PUBLIC API
 
@@ -60,7 +60,7 @@ function getJsonPathsToExamples() {
  * The pointer of the schema is derived from the pointer to the example and doesn't necessarily mean
  * that the schema actually exists.
  * @param {Array.<String>}  pathsExamples   Paths to the examples
- * @returns {Object.<String, String>} Map with schema-pointers as key and example-pointers as value
+ * @returns {Record<String, Set<String>>} Map with schema-pointers as key and example-pointers as value
  * @private
  */
 function buildValidationMap(pathsExamples) {
@@ -76,15 +76,16 @@ function buildValidationMap(pathsExamples) {
         validationMap[pathSchema] = (validationMap[pathSchema] || new Set())
             .add(pathExample);
         return validationMap;
-    }, {});
+    }, /** @type {Record<String, Set<String>>} */ ({}));
 }
 
 /**
  * Pre-processes the OpenAPI-spec, for further use.
  * The passed spec won't be modified. If a modification happens, a modified copy will be returned.
  * @param {Object}  openapiSpec     The OpenAPI-spec as JSON-schema
- * @param {boolean} [noAdditionalProperties=false]  Don't allow properties that are not defined in the schema
- * @param {boolean} [allPropertiesRequired=false]   Make all properties required
+ * @param {Object}  options
+ * @param {boolean} [options.noAdditionalProperties=false] Don't allow properties that are not defined in the schema
+ * @param {boolean} [options.allPropertiesRequired=false] Make all properties required
  * @return {Object} The prepared OpenAPI-spec
  */
 function prepare(openapiSpec, { noAdditionalProperties, allPropertiesRequired } = {}) {
@@ -100,15 +101,14 @@ function prepare(openapiSpec, { noAdditionalProperties, allPropertiesRequired } 
  * It is assumed that the JSON-pointer to the example is valid and existing.
  * @param {String}  examplePointer JSON-pointer to example
  * @returns {{
- *     exampleType: ExampleType,
- *     pathSchema: String
+ *     exampleType: typeof ExampleType[keyof typeof ExampleType],
+ *     pathSchemaAsArray: Array<String>
  * }} JSON-path to the corresponding response-schema
  * @private
  */
 function _getSchemaPointerOfExample(examplePointer) {
     const pathSegs = examplePointer.split('/'),
         idxExample = pathSegs.lastIndexOf(PROP__EXAMPLE),
-        /** @type ExampleType */
         exampleType = idxExample > -1
             ? ExampleType.single
             : ExampleType.multi,

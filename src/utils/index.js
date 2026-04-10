@@ -1,3 +1,6 @@
+/** @import { ApplicationError } from "../application-error" */
+/** @import { ValidationResponse, ValidationStatistics } from ".." */
+
 const path = require('path'),
     refParser = require('@apidevtools/json-schema-ref-parser');
 
@@ -8,8 +11,9 @@ module.exports = {
 
 /**
  * Creates a unified response for the validation-result
- * @param {Array.<ApplicationError>}    errors
- * @param {ValidationStatistics}        statistics
+ * @param {Object}                      options
+ * @param {Array.<ApplicationError>}    options.errors
+ * @param {ValidationStatistics}        [options.statistics]
  * @returns {ValidationResponse}
  * @private
  */
