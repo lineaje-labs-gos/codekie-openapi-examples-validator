@@ -1,6 +1,6 @@
 {
   "name": "openapi-examples-validator",
-  "version": "6.0.3",
+  "version": "6.0.3-lineaje-01",
   "description": "Validates embedded examples in OpenAPI-JSONs",
   "main": "dist/index.js",
   "engines": {
@@ -30,7 +30,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/codekie/openapi-examples-validator.git"
+    "url": "https://github.com/lineaje-labs-gos/codekie-openapi-examples-validator"
   },
   "keywords": [
     "swagger",
@@ -41,6 +41,12 @@
   ],
   "author": "Josua Amann",
   "license": "MIT",
+  "contributors": [
+    {
+      "name": "Lineaje DepFixer",
+      "email": "221268890+Lineaje-DepFixer@users.noreply.github.com"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/codekie/openapi-examples-validator/issues"
   },
