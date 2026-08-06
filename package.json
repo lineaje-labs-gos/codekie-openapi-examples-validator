@@ -89,14 +89,14 @@
   },
   "overrides": {
     "minimatch": ">=5.1.9",
-    "fast-uri": ">=4.1.1",
+    "fast-uri": ">=4.1.2",
     "js-yaml": ">=4.3.0",
-    "brace-expansion": ">=5.0.8"
+    "brace-expansion": ">=5.0.9"
   },
   "resolutions": {
     "minimatch": ">=5.1.9",
-    "fast-uri": ">=4.1.1",
+    "fast-uri": ">=4.1.2",
     "js-yaml": ">=4.3.0",
-    "brace-expansion": ">=5.0.8"
+    "brace-expansion": ">=5.0.9"
   }
 }
